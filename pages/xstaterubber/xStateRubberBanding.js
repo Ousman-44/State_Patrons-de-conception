@@ -46,34 +46,52 @@ const rubberBandingMachine = setup({
     // Sauvegarde la ligne
     saveLine: () => {
       rubber.remove(); // On l'enlève de la couche temporaire
-      rubber.stroke("black"); // On change la couleur
+      rubber.stroke("blue"); // On chanZZZZe la couleur
       dessin.add(rubber); // On l'ajoute à la couche de dessin
     },
   },
 }).createMachine({
-  id: "rubberBanding",
-  initial: "idle",
-  states: {
-    idle: {
-      on: {
-        MOUSECLICK: {
-          target: "drawing",
-          actions: ["createLine"],
+    id: "polyLine",
+    initial: "idle",
+    states: {
+        idle: {
+            on: {
+                MOUSECLICK: {
+                    target: "drawing",
+                    actions: ["createLine"],
+                },
+            },
         },
-      },
+
+        drawing: {
+            on: {
+                MOUSECLICK: {
+                    guard: "pasPlein",
+                    actions: ["addPoint"],
+                },
+
+                MOUSEMOVE: {
+                    actions: ["setLastPoint"],
+                },
+
+                Backspace: {
+                    guard: "plusDeDeuxPoints",
+                    actions: ["removeLastPoint"],
+                },
+
+                Enter: {
+                    guard: "auMoinsDeuxPoints",
+                    target: "idle",
+                    actions: ["saveLine"],
+                },
+
+                Escape: {
+                    target: "idle",
+                    actions: ["abandon"],
+                },
+            },
+        },
     },
-    drawing: {
-      on: {
-        MOUSEMOVE: {
-          actions: ["setLastPoint"],
-        },
-        MOUSECLICK: {
-          target: "idle",
-          actions: ["saveLine"],
-        },
-      },
-    },
-  },
 });
 
 // On démarre la machine

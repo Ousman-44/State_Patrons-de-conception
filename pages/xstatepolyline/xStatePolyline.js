@@ -55,8 +55,9 @@ const polylineMachine = setup({
         },
         // Abandonner le tracé de la polyline
         abandon: () => {
-            // Supprimer la variable polyline :
-            
+            polyline.destroy();
+            polyline = null;
+            layer.batchDraw();
         },
         // Supprimer le dernier point de la polyline
         removeLastPoint: () => {
@@ -69,11 +70,12 @@ const polylineMachine = setup({
         },
     },
     guards: {
+        auMoinsDeuxPoints: () => {
+            return polyline.points().length >= 6;
+        },
         // On peut encore ajouter un point
         pasPlein: () => {
-            // Retourner vrai si la polyline a moins de 10 points
-            // attention : dans le tableau de points, chaque point est représenté par 2 valeurs (coordonnées x et y)
-            
+            return (polyline.points().length / 2) - 1 < MAX_POINTS;
         },
         // On peut enlever un point
         plusDeDeuxPoints: () => {
@@ -82,10 +84,42 @@ const polylineMachine = setup({
         },
     },
 }).createMachine({
+    /** @xstate-layout N4IgpgJg5mDOIC5QAcD2AbAngGQJYDswA6XCdMAYgFkB5AVQGUBRAYWwEkWBpAbQAYAuohSpYuAC65U+YSAAeiALQA2ACxFVADgCcO1QCY+AVj59tWgDQhMiTUW26jendv0BGN0f0Bfb1bRYeIREEABOAIYA7gRQ1PTMtABqTPxCSCBoYpLSsgoIbgDs6gX6+sr6qnwAzJplBVVWNgjuykQFbsrGVW6mbtoFRqq+-hg4BMRhUTFxjKwc3KmymRJSMul5HQX29cqafYa1aqqNiG7qDgXK5tp9fMqeRm7DGaNBExHR+LEAQuEAxgBrWDIf5gRbpZbZNagPKaPj2TT1UpGEr1AolE4IRTtBGIzw3bRVK7uZ4BMbBSafWJMfDiMChcEiLKrXKnIxVBH3IzaYlaTQozE9IwaEyXfQ1PiVZRVAqk17jEIfaZMWB-cLIMGCJaiFY5dZKcpEKr9TQGVS6TqaXaYxTaeF6c0FPhnK0lTS+PwgfCoCBwbWBcba5l6mFKDz6DQ6PSGExmSzWMMFOx3DzKaW7dllIaeslvEhkMBB3XQ+SIPiC1TZkYBilKr5FqGshDlhPNJNEWOmEx7Ab6dke7xAA */
     id: "polyLine",
     initial: "idle",
     states: {
-        idle: {},
+        idle: {
+            on: {
+                MOUSECLICK: {
+                    target: "drawing",
+                    actions: ["createLine"],
+                },
+            },
+        },
+        drawing: {
+            on: {
+                MOUSEMOVE: {
+                    actions: ["setLastPoint"],
+                },
+                MOUSECLICK: {
+                    guard: "pasPlein",
+                    actions: ["addPoint"],
+                },
+                Backspace: {
+                    guard: "plusDeDeuxPoints",
+                    actions: ["removeLastPoint"],
+                },
+                Enter: {
+                    guard: "auMoinsDeuxPoints",
+                    target: "idle",
+                    actions: ["saveLine"],
+                },
+                Escape: {
+                    target: "idle",
+                    actions: ["abandon"],
+                },
+            },
+        },
     },
 });
 
